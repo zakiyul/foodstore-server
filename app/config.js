@@ -1,8 +1,10 @@
+const path = require("path");
 const dotenv = require("dotenv");
 dotenv.config();
 
 module.exports = {
   serviceName: process.env.SERVICE_NAME,
+  rootPath: path.resolve(__dirname, ".."),
 
   // KONFIGURASI DATABASE
   dbHost: process.env.DB_HOST,
