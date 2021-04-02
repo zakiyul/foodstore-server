@@ -135,8 +135,24 @@ async function update(req, res, next) {
   }
 }
 
+async function destory(req, res, next) {
+  try {
+    const product = await Product.findOneAndDelete({ _id: req.params.id });
+    const currentImg = `${config.rootPath}/public/upload/${product.image_url}`;
+    if (fs.existsSync) {
+      fs.unlinkSync(currentImg);
+    } else {
+      res.json({ message: "product image not found!" });
+    }
+    return res.json(product);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   index,
   store,
   update,
+  destory,
 };
