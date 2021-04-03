@@ -1,4 +1,6 @@
 const Product = require("./model");
+const Category = require("../category/model");
+const Tag = require("../tag/model");
 const config = require("../config");
 const fs = require("fs");
 const path = require("path");
@@ -8,6 +10,8 @@ async function index(req, res, next) {
   const { limit = 10, skip = 0 } = req.query;
   try {
     const products = await Product.find()
+      .populate("category")
+      .populate("tags")
       .limit(parseInt(limit))
       .skip(parseInt(skip));
     return res.json(products);
@@ -18,6 +22,27 @@ async function index(req, res, next) {
 
 async function store(req, res, next) {
   try {
+    let payload = req.body;
+
+    if (payload.tags && payload.tags.length) {
+      const tags = await Tag.find({ name: { $in: payload.tags } });
+      if (tags.length) {
+        payload = { ...payload, tags: tags.map((tag) => tag._id) };
+      }
+    }
+
+    if (payload.category) {
+      const category = await Category.findOne({
+        name: { $regex: payload.category, $options: "i" },
+      });
+      if (category) {
+        payload = { ...payload, category: category._id };
+      } else {
+        delete payload.category;
+        vf;
+      }
+    }
+
     if (req.file) {
       const tmp_path = req.file.path;
       const originalExt = req.file.originalname.split(".")[
@@ -33,7 +58,6 @@ async function store(req, res, next) {
       src.pipe(dest);
       src.on("end", async () => {
         try {
-          const payload = req.body;
           const product = new Product({ ...payload, image_url: filename });
           await product.save();
           return res.json(product);
@@ -53,7 +77,6 @@ async function store(req, res, next) {
         next(error);
       });
     } else {
-      const payload = req.body;
       const product = new Product(payload);
       await product.save();
       return res.json(product);
@@ -72,6 +95,27 @@ async function store(req, res, next) {
 
 async function update(req, res, next) {
   try {
+    let payload = req.body;
+
+    if (payload.tags && payload.tags.length) {
+      const tags = await Tag.find({ name: { $in: payload.tags } });
+      if (tags.length) {
+        payload = { ...payload, tags: tags.map((tag) => tag._id) };
+      }
+    }
+
+    if (payload.category) {
+      const category = await Category.findOne({
+        name: { $regex: payload.category, $options: "i" },
+      });
+      if (category) {
+        payload = { ...payload, category: category._id };
+      } else {
+        delete payload.category;
+        vf;
+      }
+    }
+
     if (req.file) {
       const tmp_path = req.file.path;
       const originalExt = req.file.originalname.split(".")[
@@ -87,7 +131,6 @@ async function update(req, res, next) {
       src.pipe(dest);
       src.on("end", async () => {
         try {
-          const payload = req.body;
           let product = Product.findOne({ _id: req.params.id });
           const currentImg = `${config.rootPath}/public/upload/${product.image_url}`;
           if (fs.existsSync(currentImg)) {
@@ -115,7 +158,6 @@ async function update(req, res, next) {
         next(error);
       });
     } else {
-      const payload = req.body;
       const product = await Product.findOneAndUpdate(
         { _id: req.params.id },
         payload,
