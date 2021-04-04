@@ -7,9 +7,28 @@ const path = require("path");
 const { error } = require("console");
 
 async function index(req, res, next) {
-  const { limit = 10, skip = 0 } = req.query;
   try {
-    const products = await Product.find()
+    const { limit = 10, skip = 0, q = "", category = "" } = req.query;
+    let criteria = {};
+
+    if (q.length) {
+      criteria = {
+        ...criteria,
+        name: { $regex: `${q}`, $options: "i" },
+      };
+    }
+
+    if (category.length) {
+      category = await Category.findOne({
+        name: { $regex: `${category}` },
+        $options: "i",
+      });
+      if (category) {
+        criteria = { ...criteria, category: category._id };
+      }
+    }
+
+    const products = await Product.find(criteria)
       .populate("category")
       .populate("tags")
       .limit(parseInt(limit))
