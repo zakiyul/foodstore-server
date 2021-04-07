@@ -3,10 +3,12 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
+const { decodeToken } = require("./app/auth/middleware");
 
 const productRouter = require("./app/product/router");
 const categoryRouter = require("./app/category/router");
-const apiRouter = require("./app/tag/router");
+const tagRouter = require("./app/tag/router");
+const authRouter = require("./app/auth/router");
 
 var app = express();
 
@@ -14,6 +16,7 @@ var app = express();
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
+app.use(decodeToken());
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -22,7 +25,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api", productRouter);
 app.use("/api", categoryRouter);
-app.use("/api", apiRouter);
+app.use("/api", tagRouter);
+app.use("/auth", authRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
